@@ -1,0 +1,4 @@
+interface:
+  display_name: "AoW4 Mod Toolkit"
+  short_description: "Inspect, edit, build and maintain AoW4 Mods locally"
+  default_prompt: "Use $aow4-mod-audit to create or maintain this Mod with staged changes and explicit validation evidence."

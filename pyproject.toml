@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aow4-mod-toolkit"
+dynamic = ["version"]
+description = "Project-scoped AoW4 Mod authoring, maintenance and native validation Skill"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+localization = ["polib==1.2.0"]
+analysis = ["capstone==5.0.7", "pefile==2023.2.7"]
+assets = ["PyYAML==6.0.3", "Pillow==12.3.0"]
+
+[project.scripts]
+aow4mod = "aow4mod.cli:main"
+
+[tool.setuptools]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+
+[tool.setuptools.packages.find]
+where = ["scripts"]
+include = ["aow4mod*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "aow4mod.__version__"}

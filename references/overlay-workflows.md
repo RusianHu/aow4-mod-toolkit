@@ -1,0 +1,43 @@
+# Scoped native ACP application
+
+`native-merge-check` applies matching ACP updates through the pinned official `TGCResourceLibrary` implementation and inspects the **modified native library's saved resources**. It does not use localization callback parent objects, registration logs or successful return codes as a substitute.
+
+```powershell
+aow4mod native-merge-check "<base.rpk>" --mod "<first Mod or ACP>" --mod "<second Mod or ACP>" --output "<new diagnostic directory>"
+```
+
+Choose one exact base RPK; `inspect`/the resource index identify the original packs targeted by a Mod. Repeat the check for every targeted pack. `--mod` order is the explicit order to test, not a discovered/verified runtime precedence rule. Mods without changes for that pack are listed as not evaluated; other target packs are named as unchecked. If no matching records exist, the command refuses to call this a test.
+
+Only existing-resource operation `0x40` is supported. IDs and resource types must match the selected base, with no duplicates in one Mod's selected record. Add/delete/null entries, ambiguous duplicate pack records and unknown library implementations are refused. Each Mod's records are instantiated as official `TEContentPackageModData`; embedded IDs/types/operations, list lengths and initial applied markers are checked before invoking the reviewed library vtable slot. The installed binaries are not patched.
+
+The source RPK, selected ACPs, language file and optional CLBs receive Windows read-only sharing guards during native execution. They cannot be written or deleted while guarded. Hash/inventory checks also cover the complete source Mod trees. Output must be a new directory outside protected inputs, installed game and local/Workshop Mod roots.
+
+Evidence includes the native base snapshot and one saved RPK after every layer. For each step the checker requires all expected records marked applied, preserved record data after native decoding, the exact expected resource IDs/types/fields/class sections and library membership, and unchanged nonresource/header/category metadata. The official implementation can reorder serialized definitions when removing/reinserting them; this is reported separately and does not excuse data loss or container moves. Reinserted resources retain the original logical locator slot, even if the source Mod's locator is stale; copied property data still has to match. Complete, unambiguous nested offset-map encoding changes in Mod records and saved resource fields are reported separately. Array indices, IDs/types/references, omissions and opaque bytes still participate; no omitted/default equivalence is inferred.
+
+A native method can return normally while skipping an unknown ID. Applied flags alone are also insufficient: output fields are independently compared. The real missing-ID negative control leaves the targeter unchanged while applying the other update, and fails the expected-data check. Diagnostic snapshots are never installed or published.
+
+`scoped_application_matched` proves this selected native file/application path only. Original diagnostic candidates still set `review_required` and exit 1. Explicit default omissions or other input decoding changes are kept as differences; use the verified native edit workflow when a specific canonicalization is intended. No generic normalization rule is added.
+
+Use `--dependency-library <file.clb>` repeatedly for explicit Mod image-library lookup. Reachable local RPKs are discovered from the selected Mods; repeat `--dependency-pack <file.rpk>` for explicit external RPKs. Names/hashes are checked, different content under one name is refused, and local RPKs are copied into an isolated lookup directory. Context is bounded to 256 local RPKs, 64 MiB per file and 256 MiB total; import traversal is limited to 2,000 packs. Required new imports and cycles fail before native loading; original/optional absent imports retain their stated scope. Localization catalogs, complete assets, DLC entitlement and actual game mounting are not silently inferred.
+
+Native builds use protocol 8, retaining protocol 3's requirement for one `acp_apply` check per ACP target pack with preparation/context evidence when needed. They freeze the original base, collector baseline/steps/records, prepared pack, application baseline/steps/records and local RPK copies outside the runtime payload. Offline verification recomputes exact dependency additions and resource changes, checks bundled RPK hashes/coverage and known frozen-local cycles, and refuses a report that hides differences. Historical protocols 1–6 remain readable at their original scopes; the manifest's protocol must match its report. Read [release workflows](release-workflows.md).
+
+Earlier checks dropped the diagnostic spell's reference to a separate local RPK. Merely opening that RPK through `BContentManagerOpenContent` did not fix it; the speculative loading branch was removed rather than hiding the mismatch. The dependency preparation sequence below now resolves the corrected, acyclic sample. Older stages without the necessary declarations or with reverse import cycles still fail, and no scoped check proves actual game mounting.
+
+## ACP additive dependency declarations
+
+```powershell
+aow4mod overlay-import-plan "<Mod>" --pack TOME_MAYHEM.RPK --add OWN_LEAF.RPK --output "<new plan.json>"
+aow4mod overlay-import-plan "<Mod>" --pack TOME_MAYHEM.RPK --optional --add OPTIONAL.RPK --output "<new optional plan.json>"
+aow4mod overlay-import-apply "<plan.json>" --output "<new staged Mod>"
+```
+
+The target pack must already have exactly one ACP Mod-data record. `--remove` removes a declaration from that Mod's selected required/optional list; it cannot remove imports from the original RPK. Plans bind the complete source inventory and preserve all resource payloads, other pack records and unknown metadata. `link-plan`, `link-array-plan` and `link-init-plan` add the target RPK to ACP required imports atomically with the reference edit. The local RPK must be included or available as an explicit external dependency; declaring an import does not copy a file.
+
+Historical Witch native evidence establishes additive behavior (addresses below are version-specific; use the current operation profile): `TEContentPackageModData` fields 3/4 are required/optional additions. The official collector at RVA `390280` appends them to `TGCResourcePack` members `+120/+138`, serialized as RPK fields `25/26`, preserving original required/optional fields `1E/1F`. Multiple records append in order; native duplicates and casing are retained. The CLI prevents new case-insensitive duplicate additions but does not normalize existing declarations.
+
+Real positive/negative control: in a new six-resource prototype copy, two old targeters were redirected to its existing City Riot clone, and the pack now imports `RENDERSETTINGS_STRATEGIC.RPK` directly instead of Mayhem. The ACP adds the local RPK to Mayhem. Static analysis finds no cycle or unresolved required pack. An official collector-generated base context preserves the new targeter link, all three ACP updates and all 71 base resources in the strict native application check. The same Mod with the unprepared base loses the spell's link and fails that comparison. There are still 57 inherited native diagnostic candidates and one inherited voice URI requiring review.
+
+The collector/load/reapply sequence is now automatic in `native-merge-check` and `build`: the profiled `package-dependencies` child collects additions without applying resource records; an independent comparison checks unchanged resources/metadata and exact dependency lists, then a second child loads the prepared context and applies resources. Both phases retain diagnostics. If preparation changes unexpected data, the command refuses application and retains `dependency-review.json` in the persistent native run directory; the error names that path. Do not discard this finding because it also occurs without the Mod. Windows sharing guards and before/after hashes bind inputs. The four-file corrected sample has seven checks with zero errors/mismatches, and a fresh empty-project recipe also reaches a protocol-3 build. Frozen upload staging verifies offline; real corrupted preparation remains rejected after hash refresh.
+
+ACP field `25` must track the byte length of field `26`. Per-ModData reading alone cannot validate that derived package length. Writers update both fields, and full `read_acp`/import parsing rejects mismatches; explicit zero with absent data is valid. Retain malformed-input negative controls instead of accepting a per-record callback as a complete package check.
